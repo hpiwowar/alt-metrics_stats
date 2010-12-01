@@ -1,6 +1,4 @@
-
-<!-- saved from url=(0066)http://72.14.190.127:5984/am/_design/crunch/_list/csv/event_counts -->
-<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>doi	pubDate	journal	f1000Factor	backtweetsCount	deliciousCount	facebookShareCount	facebookLikeCount	facebookCommentCount	facebookClickCount	mendeleyReadersCount	almBlogsCount	pdfDownloadsCount	xmlDownloadsCount	htmlDownloadsCount	almCiteULikeCount	almScopusCount	almPubMedCount	almCrossRefCount	plosCommentCount	plosCommentResponsesCount	wikipediaCites
+doi	pubDate	journal	f1000Factor	backtweetsCount	deliciousCount	facebookShareCount	facebookLikeCount	facebookCommentCount	facebookClickCount	mendeleyReadersCount	almBlogsCount	pdfDownloadsCount	xmlDownloadsCount	htmlDownloadsCount	almCiteULikeCount	almScopusCount	almPubMedCount	almCrossRefCount	plosCommentCount	plosCommentResponsesCount	wikipediaCites
 10.1371/journal.pbio.0000001	2003-10-13T00:00:00+00:00	pbio	6	0	0	0	0	0	0	4	0	348	71	6131	0	28	7	5	0	0	0
 10.1371/journal.pbio.0000002	2003-11-17T00:00:00+00:00	pbio	false	0	0	0	0	0	0	17	0	2436	74	14149	3	141	54	40	0	0	0
 10.1371/journal.pbio.0000003	2003-11-17T00:00:00+00:00	pbio	false	0	0	0	0	0	0	0	0	220	48	2952	0	1	0	0	0	0	0
@@ -24163,4 +24161,3 @@
 10.1371/journal.ppat.1001188	2010-11-11T00:00:00+00:00	ppat	false	0	0	0	0	0	0	1	0	21	3	122	0	0	0	0	0	0	0
 10.1371/journal.ppat.1001191	2010-11-11T00:00:00+00:00	ppat	false	0	0	1	1	0	0	0	0	76	2	246	0	0	0	0	0	0	0
 10.1371/journal.ppat.1001192	2010-11-11T00:00:00+00:00	ppat	false	0	0	0	0	0	0	0	0	12	1	65	0	0	0	0	0	0	0
-</body></html>
