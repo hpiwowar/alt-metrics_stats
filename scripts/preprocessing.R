@@ -85,3 +85,7 @@ dim(dat.all)
 names(dat.all)
 summary(dat.all)
 
+########  Save this data
+# then can examine it easily in other programs
+
+write.csv(dat.all, "data/derived/all_event_counts.csv")
