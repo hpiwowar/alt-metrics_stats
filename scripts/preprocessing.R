@@ -32,7 +32,6 @@ dat.eventcounts$pubDateValue  = mdy.date(months, days, years)
 # Create a column that has days since published
 dat.eventcounts$daysSincePublished = max(dat.eventcounts$pubDateValue) - dat.eventcounts$pubDateValue
 
-# fix NA
 # There are a few rows that don't have PLoS XML data.  Set missing values to NA
 plosMissing = dat.raw.eventcounts$htmlDownloadsCount == 0
 plosColumns = c("almBlogsCount",
@@ -47,7 +46,12 @@ plosColumns = c("almBlogsCount",
 	"plosCommentResponsesCount")
 dat.eventcounts[plosMissing, plosColumns] = NA
 
-# fix facebook issues
+# There are a few Facebook results from Facebook API with negative numbers
+# Not clear what this means (not in Facebook API docs), so setting to NA
+facebookColumns = c("facebookShareCount", "facebookLikeCount", "facebookCommentCount", "facebookClickCount")
+for (col in facebookColumns) {
+	dat.eventcounts[dat.eventcounts[, col] < 0, col] = NA	
+}
 
 
 
