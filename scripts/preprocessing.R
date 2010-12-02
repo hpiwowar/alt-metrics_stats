@@ -1,6 +1,22 @@
 library(Rserve)
 Rserve(args="--no-save")
 
+######## event_counts.txt
+## This data contains into on metrics for which we only have aggregate counts
+
+### READ DATA
+dat.raw.eventcounts = read.csv("data/event_counts.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
+
+## Look at it
+dim(dat.raw.eventcounts)
+names(dat.raw.eventcounts)
+
+## Adjust some fields to they are the right datatype
+dat.eventcounts$journal = factor(dat.raw.eventcounts$journal)
+dat.eventcounts$f1000Factor = as.integer(dat.raw.eventcounts$f1000Factor)
+dat.eventcounts$f1000Factor[is.na(dat.eventcounts$f1000Factor)] = 0
+summary(dat.eventcounts)
+
 
 ###### events.txt
 # file has one row for each event.
@@ -44,21 +60,6 @@ counts.df = as.data.frame(counts.df)
 counts.df$doi = rownames(counts.df)
 
 
-######## OK NOW event_counts.txt
-## This data contains into on metrics for which we only have aggregate counts
-
-### READ DATA
-dat.raw.eventcounts = read.csv("data/event_counts.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
-
-## Look at it
-dim(dat.raw.eventcounts)
-names(dat.raw.eventcounts)
-
-## Adjust some fields to they are the right datatype
-dat.eventcounts$journal = factor(dat.raw.eventcounts$journal)
-dat.eventcounts$f1000Factor = as.integer(dat.raw.eventcounts$f1000Factor)
-dat.eventcounts$f1000Factor[is.na(dat.eventcounts$f1000Factor)] = 0
-summary(dat.eventcounts)
 
 
 ########  Now merge it all together
