@@ -5,7 +5,7 @@ Rserve(args="--no-save")
 ## This data contains into on metrics for which we only have aggregate counts
 
 ### READ DATA
-dat.raw.eventcounts = read.csv("data/event_counts.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
+dat.raw.eventcounts = read.csv("data/raw/event_counts.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
 
 ## Look at it
 dim(dat.raw.eventcounts)
@@ -41,7 +41,7 @@ summary(dat.eventcounts)
 # in some cases, an event contains a count of occurances that day in the "values" column
 
 ## READ DATA
-dat.raw.events = read.csv("data/events.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
+dat.raw.events = read.csv("data/raw/events.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
 
 ## Look at it
 dim(dat.raw.events)
