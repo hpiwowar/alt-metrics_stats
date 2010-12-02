@@ -36,6 +36,10 @@ dat.eventcounts$daysSincePublished = max(dat.eventcounts$pubDateValue) - dat.eve
 summary(dat.eventcounts)
 
 
+
+
+
+
 ###### events.txt
 # file has one row for each event.
 # in some cases, an event contains a count of occurances that day in the "values" column
@@ -74,18 +78,3 @@ colnames(dat.events.perDoi)
 dat.events.perDoi["10.1371/journal.pone.0008280",]
 summary(dat.events.perDoi)
 
-
-########  Now merge it all together
-
-dim(merge(dat.events.perDoi, dat.eventcounts, by=c("doi")))
-dat.all = merge(dat.events.perDoi, dat.eventcounts, by=c("doi"))
-
-## Look at it
-dim(dat.all)
-names(dat.all)
-summary(dat.all)
-
-########  Save this data
-# then can examine it easily in other programs
-
-write.csv(dat.all, "data/derived/all_event_counts.csv")
