@@ -32,6 +32,25 @@ dat.eventcounts$pubDateValue  = mdy.date(months, days, years)
 # Create a column that has days since published
 dat.eventcounts$daysSincePublished = max(dat.eventcounts$pubDateValue) - dat.eventcounts$pubDateValue
 
+# fix NA
+# There are a few rows that don't have PLoS XML data.  Set missing values to NA
+plosMissing = dat.raw.eventcounts$htmlDownloadsCount == 0
+plosColumns = c("almBlogsCount",
+	"pdfDownloadsCount",
+	"xmlDownloadsCount",
+	"htmlDownloadsCount",
+	"almCiteULikeCount",
+	"almScopusCount",
+	"almPubMedCentralCount",
+	"almCrossRefCount",
+	"plosCommentCount",
+	"plosCommentResponsesCount")
+dat.eventcounts[plosMissing, plosColumns] = NA
+
+# fix facebook issues
+
+
+
 ## Look again
 summary(dat.eventcounts)
 
