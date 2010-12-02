@@ -10,11 +10,29 @@ dat.raw.eventcounts = read.csv("data/event_counts.txt", header=TRUE, sep="\t", s
 ## Look at it
 dim(dat.raw.eventcounts)
 names(dat.raw.eventcounts)
+summary(dat.eventcounts)
 
-## Adjust some fields to they are the right datatype
+## Adjust some fields to they are the right datatype.  
+dat.eventcounts = dat.raw.eventcounts
+
+# Change journal strings to factors
 dat.eventcounts$journal = factor(dat.raw.eventcounts$journal)
+
+# Change f1000Factor strings to integer counts.  "false" means count of 0.
 dat.eventcounts$f1000Factor = as.integer(dat.raw.eventcounts$f1000Factor)
 dat.eventcounts$f1000Factor[is.na(dat.eventcounts$f1000Factor)] = 0
+
+library(date)
+# Create a column that contains the date as a date object
+days = as.integer(substr(dat.raw.eventcounts$pubDate, 9, 10))
+months = as.integer(substr(dat.raw.eventcounts$pubDate, 6, 7))
+years = as.integer(substr(dat.raw.eventcounts$pubDate, 1, 4))
+dat.eventcounts$pubDateValue  = mdy.date(months, days, years)
+
+# Create a column that has days since published
+dat.eventcounts$daysSincePublished = max(dat.eventcounts$pubDateValue) - dat.eventcounts$pubDateValue
+
+## Look again
 summary(dat.eventcounts)
 
 
@@ -30,11 +48,12 @@ dim(dat.raw.events)
 names(dat.raw.events)
 summary(dat.raw.events)
 
+## Now adjust because some events include multiple occurances
 ## add a new column called number.events that is ususally 1
 ## but is set to the number of occurances in the "value" column 
 ### for datatypes with more than one occurance per row
 dat.events = dat.raw.events
-number.rows = table(dat.raw.events$eventType)
+number.rows = table(dat.events$eventType)
 eventTypes = names(number.rows)
 # Assign the contents of value as the number of occurances
 dat.events$number.events = as.integer(dat.events$value)		
@@ -46,28 +65,23 @@ for (myEventType in events.with.individual.rows) {
 }
 
 ## now consolidate these events into a single table of dois, eventsType, and total count
-counts = tapply(dat.events$number.events, list(dat.events$doi, dat.events$eventType), sum)
-counts[is.na(counts)] = 0
+dat.events.perDoi = as.data.frame(tapply(dat.events$number.events, list(dat.events$doi, dat.events$eventType), sum))
+dat.events.perDoi$doi = rownames(dat.events.perDoi)
+dat.events.perDoi[is.na(dat.events.perDoi)] = 0
 
 # look at it
-colnames(counts)
-counts["10.1371/journal.pone.0008280",]
-summary(counts)
-describe(counts)
-
-## get the data into a data frame so easier to merge
-counts.df = as.data.frame(counts.df)
-counts.df$doi = rownames(counts.df)
-
-
+colnames(dat.events.perDoi)
+dat.events.perDoi["10.1371/journal.pone.0008280",]
+summary(dat.events.perDoi)
 
 
 ########  Now merge it all together
 
-dim(merge(counts.df, dat.raw.eventcounts, by=c("doi")))
-dat.all = merge(counts.df, dat.raw.eventcounts, by=c("doi"))
+dim(merge(dat.events.perDoi, dat.eventcounts, by=c("doi")))
+dat.all = merge(dat.events.perDoi, dat.eventcounts, by=c("doi"))
 
 ## Look at it
-
+dim(dat.all)
+names(dat.all)
 summary(dat.all)
 

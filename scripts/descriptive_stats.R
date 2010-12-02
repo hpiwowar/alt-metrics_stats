@@ -1,18 +1,19 @@
 
 # Placeholder content.  Will make more browseable soon.
 
-count.if.gt1 = counts
-count.if.gt1[count.if.gt1 > 1] = 1
-summary(count.if.gt1)
-apply(count.if.gt1, 2, mean)
-table(apply(count.if.gt1, 1, sum))
-
-metadataColumns = c("doi", "pubDate", "journal")
+metadataColumns = c("doi", "pubDate", "pubDateValue", "daysSincePublished", "journal")
 altmetricsColumns = names(dat.all)[names(dat.all) %nin% metadataColumns]
 
-dat.all.if.gt1 = dat.all[,altmetricsColumns]
-dat.all.if.gt1[dat.all > 1] = 1
-summary(dat.all.if.gt1)
+dat.all.metricIsUsed = dat.all
 
-apply(dat.all.if.gt1, 2, mean)
-table(apply(dat.all.if.gt1, 1, sum))
+dat.all.metricIsUsed[,altmetricsColumns][dat.all.metricIsUsed[,altmetricsColumns] > 1] = 1
+summary(dat.all.metricIsUsed)
+
+options(scipen=100)
+options(digits=2)
+
+# Metrics by Average number of articles with at least one event
+apply(dat.all.metricIsUsed[,altmetricsColumns], 2, mean)
+
+# Number of articles by how many metrics they have with at least one event
+table(apply(dat.all.metricIsUsed[,altmetricsColumns], 1, sum))
