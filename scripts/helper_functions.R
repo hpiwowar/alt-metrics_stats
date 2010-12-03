@@ -108,7 +108,10 @@ function(data, ML=FALSE, std.err=TRUE, use=c("complete.obs", "pairwise.complete.
          r <- rcorr(x, y, type=type)$r[1,2]
 #         Type[i, j] <- Type[j, i] <- "Pearson"
 #         Type[i, j] <- Type[j, i] <- "rcorr Pearson"
-         Type[i, j] <- Type[j, i] <- sprintf("rcorr %s", type)
+		 if (type=="spearman")
+         	Type[i, j] <- Type[j, i] <- "rcorr Spearman"
+		 else
+      		Type[i, j] <- Type[j, i] <- "rcorr Pearson"
          R[i, j] <- R[j, i] <- r
          if (std.err) {
            n <- sum(complete.cases(x, y))
