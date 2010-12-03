@@ -79,7 +79,7 @@ adjust.to.positive.definite = function(inputcor) {
 # and print out updates
 "hetcor.modified" <-
 function(data, ML=FALSE, std.err=TRUE, use=c("complete.obs", "pairwise.complete.obs"),
-  bins=4, pd=TRUE, ...){
+  bins=4, pd=TRUE, type=c("pearson", "spearman"), ...){
   se.r <- function(r, n){
     rho <- r*(1 + (1 - r^2)/(2*(n - 3))) # approx. unbiased estimator
     v <- (((1 - rho^2)^2)/(n + 6))*(1 + (14 + 11*rho^2)/(2*(n + 6)))
@@ -104,9 +104,11 @@ function(data, ML=FALSE, std.err=TRUE, use=c("complete.obs", "pairwise.complete.
       y <- data[[j]]
       if (inherits(x, c("numeric", "integer")) && inherits(y, c("numeric", "integer"))) {
 #         r <- cor(x, y, use="complete.obs")
-         r <- rcorr(x, y, type="pearson")$r[1,2]
+#         r <- rcorr(x, y, type="pearson")$r[1,2]
+         r <- rcorr(x, y, type=type)$r[1,2]
 #         Type[i, j] <- Type[j, i] <- "Pearson"
-         Type[i, j] <- Type[j, i] <- "rcorr Pearson"
+#         Type[i, j] <- Type[j, i] <- "rcorr Pearson"
+         Type[i, j] <- Type[j, i] <- sprintf("rcorr %s", type)
          R[i, j] <- R[j, i] <- r
          if (std.err) {
            n <- sum(complete.cases(x, y))
