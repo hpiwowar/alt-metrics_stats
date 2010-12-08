@@ -1,5 +1,5 @@
-library(Rserve)
-Rserve(args="--no-save")
+#library(Rserve)
+#Rserve(args="--no-save")
 
 ######## event_counts.txt
 ## This data contains into on metrics for which we only have aggregate counts
@@ -41,8 +41,8 @@ dat.eventcounts$journal = factor(dat.raw.eventcounts$journal)
 dat.eventcounts$f1000Factor = as.integer(dat.raw.eventcounts$f1000Factor)
 dat.eventcounts$f1000Factor[is.na(dat.eventcounts$f1000Factor)] = 0
 
-# Change deliciousCount strings to integer counts.  "false" means count of 0.
-dat.eventcounts$deliciousCount = as.integer(dat.raw.eventcounts$deliciousCount)
+# delicious count looks strange for now
+dat.eventcounts$deliciousCount = NULL
 
 
 # rename PMC column

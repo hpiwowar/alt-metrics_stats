@@ -5,105 +5,34 @@
 # And execute the following line
 Sys.setenv( PATH=paste(Sys.getenv("PATH"),"/usr/texbin",sep=":") ) 
 
-
 library(Rserve)
 Rserve(args="--no-save")
 
-library(plyr)
+#library(plyr)
+source("scripts/helper_functions.R")
+#source("scripts/preprocessing.R")
 
-setwd("/Users/hpiwowar/Documents/Projects/PLoSimpact/alt-metrics_stats")
-source("aim3_functions_20100215.R")
+dat.transformed = dat.eventcounts
+vars.no.transform = c("doi", "pubDate", "pubDateValue", "journal", "daysSincePublished")
 
-
-#### READ DATA
-# dat.raw = read.csv("summary_alm_data_201002.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
-dat.raw = read.csv("event_counts.csv", header=TRUE, sep=",", stringsAsFactors=FALSE)
-dim(dat.raw)
-names(dat.raw)
-summary(dat.raw)
-
-#save(dat.raw, file="dat_raw.Rdata")
-#load("dat_raw.Rdata")
-
-#### START TO BUILD STATS DATASET
-library(Date)
-
-dat = data.frame(doi = dat.raw$doi)
-
-dat$pubDate            			= as.Date(dat.raw$pubDate)
-dat$pubDate  = mdy.date(as.integer(substr(dat.raw$pubDate, 6, 7)), 
-		as.integer(substr(dat.raw$pubDate, 9, 10)),  
-		as.integer(substr(dat.raw$pubDate, 1, 4)))
-
-dat$days.since.published        = max(dat$pubDate) - dat$pubDate
-dat$journal             		= dat.raw$journal #changed to factor below
-dat$f1000Factor					= as.integer(dat.raw$f1000Factor)
-dat$f1000Factor[is.na(dat$f1000Factor)] = 0
-dat$backtweetsCount          	= dat.raw$backtweetsCount
-dat$deliciousCount          	= dat.raw$deliciousCount
-dat$facebookShareCount          = dat.raw$facebookShareCount
-dat$facebookLikeCount          	= dat.raw$facebookLikeCount
-dat$facebookCommentCount        = dat.raw$facebookCommentCount
-dat$facebookClickCount         	= dat.raw$facebookClickCount
-dat$mendeleyReadersCount        = dat.raw$mendeleyReadersCount
-dat$almBlogsCount	         	= dat.raw$almBlogsCount
-dat$pdfDownloadsCount         	= dat.raw$pdfDownloadsCount
-dat$xmlDownloadsCount         	= dat.raw$xmlDownloadsCount
-dat$htmlDownloadsCount         	= dat.raw$htmlDownloadsCount
-dat$almCiteULikeCount         	= dat.raw$almCiteULikeCount
-dat$almScopusCount	         	= dat.raw$almScopusCount
-dat$almPubMedCentralCount	    = dat.raw$almPubMedCentralCount 
-dat$almCrossRefCount	        = dat.raw$almCrossRefCount
-dat$plosCommentCount	        = dat.raw$plosCommentCount
-dat$plosCommentResponsesCount	= dat.raw$plosCommentResponsesCount
-dat$wikipediaCites	         	= dat.raw$wikipediaCites
-
-dat.transformed = dat
-vars.no.transform = c("doi", "pubDate", "days.since.published")
-
-vars.factor = c("doi", "journal")
-dat.transformed[,vars.factor] = colwise(factor)(dat[,vars.factor])
-
-vars.to.transform = !(names(dat.transformed) %in% c(vars.no.transform, vars.factor))
+vars.to.transform = !(names(dat.transformed) %in% c(vars.no.transform))
 dat.transformed[,vars.to.transform] = tr(dat[,vars.to.transform])
-
-
 summary(dat.transformed)
 
-
-############ Look at the data
-
-library(Hmisc)
-library(psych)
-# both Hmisc and psych have a describe
-Hmisc::describe(dat, listunique=0)
-#latex(Hmisc::describe(dat, listunique=0))
-#psych::describe(dat, interp=TRUE)
-
-
-### HEATHER come back and do this part once I know
-
-#dat.dots = cbind(dat, pubmed.journal=dat.raw$pubmed.journal, country.clean=dat.raw$country.clean)
-#s = summary(dataset.in.geo.or.ae.int ~ pubmed.journal + country.clean, dat=dat.dots)
-#s
-#plot(s, cex.labels=0.1, cex=0.7)
-#title=("Proportion of studies with datasets in GEO or ArrayExpress")
-# This is a GREAT plot!  need to split the categories a bit better
-
-# Like this one, but need fewer variables so it is more readable
-#s = summary(dataset.in.geo.or.ae.int ~ ., dat=dat)
-#tiff("heat-attributes.tiff", bg="white", width=880, height=1200)
-#plot(s, cex.labels=0.1, cex=0.7)
-#title=("Proportion of studies with datasets in GEO or ArrayExpress")
-#dev.off()
-
 ########### Prep for statistics
-# Heather, try something
 
-#vars.exclude = c("doi")
-#dat.indep.stats = dat.transformed[,!(names(dat.transformed) %in% vars.exclude)]
-dat.indep.stats = dat.transformed[,vars.to.transform]
+vars.exclude = c("doi", "pubDate", "journal", "pubDateValue", "daysSincePublished")
+dat.indep.stats = dat.transformed[,!(names(dat.transformed) %in% vars.exclude)]
 
+
+###### Background subtraction of lowess
+
+dat.indep.stats.norm = data.frame(row.names = dat.transformed$doi)
+for (col in names(dat.indep.stats)) {
+	print(col)
+	background = lowess(dat.transformed[,col] ~ dat.transformed$daysSincePublished)
+	dat.indep.stats.norm[,col] = dat.transformed[, col] - background$y
+}
 
 ############## Get correlation matrix
 
@@ -112,40 +41,36 @@ dat.indep.stats = dat.transformed[,vars.to.transform]
 
 library(polycor)
 #myhetcorr = hetcor.modified(dat.indep.stats, use="complete.obs", std.err=FALSE, pd=FALSE)
-myhetcorr = hetcor.modified(dat.indep.stats, use="pairwise.complete.obs", std.err=FALSE, pd=FALSE)
+myhetcorr = hetcor.modified(dat.indep.stats.norm, 
+							use="pairwise.complete.obs", 
+							std.err=FALSE, 
+							pd=FALSE, 
+							type="spearman")
 mycor.unadjusted = myhetcorr$correlations
 #write.table(mycor.unadjusted,"/Users/hpiwowar/stats link/mycor.unadjusted.txt",append=F,quote=F,sep="\t",row.names=T)
 
-
 # Are some correlations NA?
 which(is.na(mycor.unadjusted))
-
 #mycor.unadjusted[which(is.na(mycor.unadjusted))] = 1
 
 # Now fix the correlation matrix if it is not positive-definite
-
 mycor = adjust.to.positive.definite(mycor.unadjusted)
 
 #display
 library(gplots)
-heatmap.2(mycor, col=bluered(32)[17:32], cexRow=0.9, cexCol = .9, symm = TRUE, dend = "row", trace = "none", main = "Thesis Data", margins=c(10,10), key=FALSE, keysize=0.1)
+colorRange = round(range(mycor) * 15) + 16
+colorChoices = bluered(32)[colorRange[1]:colorRange[2]]
+heatmap.2(mycor, col=colorChoices, cexRow=0.9, cexCol = .9, symm = TRUE, dend = "row", trace = "none", main = "Thesis Data", margins=c(10,10), key=FALSE, keysize=0.1)
 
 showpanel <- function(col) {
   image(z=matrix(1:100, ncol=1), col=col, xaxt="n", yaxt="n" )
 }
-showpanel(bluered(32)[17:32])
-
-cm.colors(16)
-
-# Now, for interest, display it with data sharing variables also
-#mycor.all = hetcor.modified(dat, use="pairwise.complete.obs", std.err=FALSE, pd=FALSE)
-#mycor.data.sharing = mycor.all$correlations["dataset.in.geo.or.ae",]
-#mycor.data.sharing.relevant = mycor.data.sharing[!names(mycor.data.sharing) %in% c("pmid", "dataset.in.geo", "dataset.in.geo.or.ae", "dataset.in.geo.or.ae.int")]
-#data.sharing.colours = colorpanel(20,low="red",high="green")[10 * (1 + round(mycor.data.sharing.relevant, 1))]
-#heatmap.3(mycor, ColSideColors=data.sharing.colours, col=cm.colors, cexRow=0.5, cexCol = .8, symm = TRUE, dend = "row", trace = "none", main = "Thesis Data", margins=c(15,15), key=FALSE, keysize=0.1)
+quartz()
+showpanel(colorChoices)
+showpanel(bluered(32))
 
 #pdf("heatmap.pdf", height=10, width=10)
-#heatmap.2(mycor, col=bluered(16), cexRow=0.5, cexCol = .8, symm = TRUE, dend = "row", trace = "none", main = "Thesis Data", margins=c(15,15), key=FALSE, keysize=0.1)
+#heatmap.2(mycor, col=colorChoices, cexRow=0.9, cexCol = .9, symm = TRUE, dend = "row", trace = "none", main = "Thesis Data", margins=c(10,10), key=FALSE, keysize=0.1)
 #dev.off
 
 ############## FIRST ORDER ANALYSIS
@@ -156,7 +81,7 @@ cm.colors(16)
 library(nFactors)
 eigenvectors.1st <- eigen(mycor) # get eigenvalues
 # this line takes a long time
-aparallel.1st <- parallel(subject=nrow(dat.indep.stats), var=ncol(dat.indep.stats), rep=100, cent=.05)
+aparallel.1st <- parallel(subject=nrow(dat.indep.stats.norm), var=ncol(dat.indep.stats.norm), rep=100, cent=.05)
 scree.results.1st <- nScree(eigenvectors.1st$values, aparallel.1st$eigen$qevpea)
 summary(scree.results.1st)
 plotnScree(scree.results.1st) 
@@ -171,14 +96,16 @@ number.factors.1st = 5
 ##############  Do First-Order Factor Analysis
 
 # Maximum liklihood doesn't converge because too 
-fit.ml = factanal(dat, number.factors.1st, rotation="promax", covmat=mycor)
+fit.ml = factanal(dat.indep.stats.norm, number.factors.1st, rotation="promax", covmat=mycor)
 print(fit.ml, sort=TRUE)
 
 
 # Use princip axis when maximum liklihood fails to converge:
 library(psych)
 fit.fa.1st = fa(mycor, number.factors.1st, fm="minres", rotate="promax", 
-                scores=FALSE, residuals=TRUE, n.obs=max(dim(dat.indep.stats)))
+                scores=FALSE, residuals=TRUE, n.obs=max(dim(dat.indep.stats.norm)))
+fit.fa.1st = fa(mycor, number.factors.1st, fm="minres", rotate="oblimin", 
+                scores=FALSE, residuals=TRUE, n.obs=max(dim(dat.indep.stats.norm)))
 
 #to show the loadings sorted by absolute value
 print(fit.fa.1st, sort=TRUE)
@@ -192,16 +119,16 @@ print(fit.fa.1st, sort=TRUE)
 
 
 factor.names.1st = c(
-"MR1"="Ratings",
-"MR2"="Citations",
-"MR3"="Views",
-"MR4"="Bookmarks",
-"MR5"="Notes")
+"MR1"="Citations",
+"MR2"="Downloads",
+"MR3"="Facebook",
+"MR4"="Mendeley",
+"MR5"="Comments")
 
 for (afactor in names(factor.names.1st)) {
     print(paste(afactor, ": ", factor.names.1st[afactor], sep=""))
-    print.thresh(fit.fa.1st$loadings[, afactor], .4, TRUE)
-    print.thresh(fit.fa.1st$loadings[, afactor], -0.4, FALSE)
+    print.thresh(fit.fa.1st$loadings[, afactor], .3, TRUE)
+    print.thresh(fit.fa.1st$loadings[, afactor], -0.3, FALSE)
 }
 
 
@@ -223,14 +150,14 @@ scree.results.2nd
 plotnScree(scree.results.2nd) 
 
 #number.factors.2nd = scree.results.2nd$Components$noc
-number.factors.2nd = 2
+number.factors.2nd = 3
 
 
 ##############  Do Second-Order Factor Analysis
 
 # Ideally uncorrelated, but want it to be a good fit
 #fit.fa.2nd = fa(fit.fa.1st.cor, number.factors.2nd, fa="minres", rotate="varimax")
-fit.fa.2nd = fa(fit.fa.1st.cor, number.factors.2nd, fa="minres", rotate="varimax")
+fit.fa.2nd = fa(fit.fa.1st.cor, number.factors.2nd, fm="minres", rotate="varimax")
 print(fit.fa.2nd, sort=TRUE)
 
 #fa.diagram(fit.fa.2nd)
@@ -254,8 +181,9 @@ Pvo = Pvf %*% A
 
 
 factor.names.2nd = c(
-"MR1"="Views, citations, bookmarks",
-"MR2"="Ratings, notes")
+	"MR1"="Mendeley",
+	"MR2"="Citations and downloads",
+	"MR3"="Facebook and Comments")
 
 # On original variables
 for (afactor in names(factor.names.2nd)) {
@@ -276,7 +204,7 @@ for (afactor in names(factor.names.2nd)) {
 # Just want one output variables
 #dat$dataset.in.geo.or.ae.int = dat.nums$in.ae.or.geo
 #dat.impute.input = dat[,!names(dat) %in% c("dataset.in.geo", "dataset.in.geo.or.ae")]
-dat.impute.input = dat.indep.stats
+dat.impute.input = dat.indep.stats.norm
 
 # Show the pattern of NAs
 library(mice)
