@@ -15,22 +15,18 @@ summary(dat.raw.eventcounts)
 ## A bit of data cleaning
 dat.eventcounts = dat.raw.eventcounts
 
-# get rid of rows that have dates that are NA
-library(date)
-
-# Create a column that contains the date as a date object
-years = as.integer(substr(dat.raw.eventcounts$pubDate, 1, 4))
-months = as.integer(substr(dat.raw.eventcounts$pubDate, 6, 7))
-days = as.integer(substr(dat.raw.eventcounts$pubDate, 9, 10))
-has.good.date = years > 0
+## Make sure all data has good DOIs, detects rogue line breaks etc.
+hasGoodDoi = "10." == substr(dat.raw.eventcounts$doi, 1, 3)
+summary(hasGoodDoi)
+dat.eventcounts[!hasGoodDoi,]
 
 # Now create a date type variable
-dat.eventcounts$pubDateValue[has.good.date]  = mdy.date(months[has.good.date], days[has.good.date], years[has.good.date])
-dat.eventcounts$pubDateValue[years <= 0]  = NA
+dat.eventcounts$pubDate  = strptime(dat.eventcounts$pubDate, "%Y-%m-%dT")
+summary(dat.eventcounts$pubDate)
 
 # Create a column that has days since published
-dat.eventcounts$daysSincePublished = max(dat.eventcounts$pubDateValue, na.rm=T) - dat.eventcounts$pubDateValue
-
+dat.eventcounts$daysSincePublished = as.integer(difftime(max(dat.eventcounts$pubDate), dat.eventcounts$pubDate, units="days"))
+hist(dat.eventcounts$daysSincePublished)
 
 ## Adjust some fields to they are the right datatype.  
 
@@ -41,9 +37,19 @@ dat.eventcounts$journal = factor(dat.raw.eventcounts$journal)
 dat.eventcounts$f1000Factor = as.integer(dat.raw.eventcounts$f1000Factor)
 dat.eventcounts$f1000Factor[is.na(dat.eventcounts$f1000Factor)] = 0
 
-# delicious count looks strange for now
-dat.eventcounts$deliciousCount = NULL
+# Change wikipediaCites NAs to 0s
+dat.eventcounts$wikipediaCites[is.na(dat.eventcounts$wikipediaCites)] = 0
 
+# Change mendeleyReadersCount NAs to 0s
+dat.eventcounts$mendeleyReadersCount[is.na(dat.eventcounts$mendeleyReadersCount)] = 0
+
+# Change facebookClickCount NAs to 0s
+dat.eventcounts$facebookClickCount[is.na(dat.eventcounts$facebookClickCount)] = 0
+
+# delicious count looks strange for now
+dat.eventcounts$deliciousCount = as.integer(dat.raw.eventcounts$deliciousCount)
+dat.eventcounts$deliciousCount[is.na(dat.eventcounts$deliciousCount)] = 0
+dat.eventcounts$deliciousCount[dat.eventcounts$deliciousCount > 1000000] = 1
 
 # rename PMC column
 dat.eventcounts$almPubMedCentralCount = dat.eventcounts$almPubMedCount
@@ -56,6 +62,19 @@ for (col in facebookColumns) {
 	dat.eventcounts[which(dat.eventcounts[, col] < 0), col] = NA	
 }
 
+## article Type, set numeric values to "Research Article" 
+# and store as a factor
+## See https://github.com/hpiwowar/alt-metrics_stats/issues/issue/9 
+dat.eventcounts$articleType[!is.na(as.numeric(dat.eventcounts$articleType))] = "Research Article" 
+dat.eventcounts$articleType = factor(dat.eventcounts$articleType)
+
+## authorsCount
+dat.eventcounts$authorsCount = as.numeric(dat.raw.eventcounts$authorsCount)
+
+## eliminate columns not in use right now
+dat.eventcounts$pmid = NULL
+dat.eventcounts$plosSubjectTags = NULL
+dat.eventcounts$plosSubSubjectTags = NULL
 
 
 ## Look again
