@@ -1,4 +1,4 @@
-### To do
+bSaveImage = T
 
 # to get latex to work, first in the R GUI go to 
 # Misc, start X11 server
@@ -122,7 +122,9 @@ mycor = adjust.to.positive.definite(mycor.unadjusted)
 library(gplots)
 colorRange = round(range(mycor) * 15) + 16
 colorChoices = bluered(32)[colorRange[1]:colorRange[2]]
-heatmap.2(mycor, col=colorChoices, cexRow=0.9, cexCol = .9, symm = TRUE, dend = "row", trace = "none", main = "Thesis Data", margins=c(10,10), key=FALSE, keysize=0.1)
+if (bSaveImage) png("results/heatmap.png")
+	heatmap.2(mycor, col=colorChoices, cexRow=0.9, cexCol = .9, symm = TRUE, dend = "row", trace = "none", main = "Thesis Data", margins=c(10,10), key=FALSE, keysize=0.1)
+if (bSaveImage) dev.off()
 
 showpanel <- function(col) {
   image(z=matrix(1:100, ncol=1), col=col, xaxt="n", yaxt="n" )
