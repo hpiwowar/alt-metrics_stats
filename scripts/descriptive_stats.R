@@ -1,7 +1,8 @@
+library(Hmisc)
 
 # Placeholder content.  Will make more browseable soon.
 
-metadataColumns = c("doi", "pubDate", "pubDateValue", "daysSincePublished", "journal", "articleType", "authorsCount", "pmid", "plosSubjectTags", "plosSubSubjectTags")
+metadataColumns = c("doi", "pubDate", "daysSincePublished", "journal", "articleType", "authorsCount")
 altmetricsColumns = names(dat.eventcounts)[names(dat.eventcounts) %nin% metadataColumns]
 
 dat.metricIsUsed = dat.eventcounts
@@ -25,20 +26,18 @@ dev.off()
 
 # Look at the distributions
 for (col in altmetricsColumns) {
-	pdf(paste("results/hist_has_events/", col, ".pdf", sep=""))
+	#pdf(paste("results/hist_has_events/", col, ".pdf", sep=""))
+	quartz()
 	par(mfrow = c(2, 1))
 	titletext = paste(col, "\nnot normalized by pubdate", sep="")
-	hist(dat.eventcounts[,col], main=titletext)
-	hist(log(dat.eventcounts[,col]), main=paste("log(", col, ")", "\nnot normalized by pubdate", sep=""))
-	dev.off()
+	hist(dat.eventcounts[,col], breaks=50, main=titletext)
+	hist(tr(dat.eventcounts[,col]), breaks=50, main=paste("sqrt(1+", col, ")", "\nnot normalized by pubdate", sep=""))
+	#dev.off()
 }
+
 
 ### Write out to examine in other programs
 write.csv(dat.metricIsUsed, "data/derived/all_metrics_used.csv")
 
-library(Hmisc)
-Hmisc::describe(dat.eventcounts[,altmetricsColumns])
-latex(Hmisc::describe(dat.eventcounts[,altmetricsColumns]))
 
-Hmisc::describe(dat.metricIsUsed[,altmetricsColumns])
 

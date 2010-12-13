@@ -12,27 +12,88 @@ Rserve(args="--no-save")
 source("scripts/helper_functions.R")
 #source("scripts/preprocessing.R")
 
-dat.transformed = dat.eventcounts
-vars.no.transform = c("doi", "pubDate", "pubDateValue", "journal", "daysSincePublished")
+excludeColumns = c("journal", "articleType", "authorsCount")
+dat.indep.stats = dat.eventcounts[,names(dat.eventcounts) %nin% excludeColumns]
+summary(dat.indep.stats)
 
-vars.to.transform = !(names(dat.transformed) %in% c(vars.no.transform))
-dat.transformed[,vars.to.transform] = tr(dat[,vars.to.transform])
-summary(dat.transformed)
+metadataColumns = c("doi", "pubDate", "daysSincePublished", "journal", "articleType", "authorsCount")
+altmetricsColumns = names(dat.eventcounts)[names(dat.eventcounts) %nin% metadataColumns]
 
-########### Prep for statistics
+#### transform
 
-vars.exclude = c("doi", "pubDate", "journal", "pubDateValue", "daysSincePublished")
-dat.indep.stats = dat.transformed[,!(names(dat.transformed) %in% vars.exclude)]
+dat.indep.stats.tr = dat.indep.stats
+dat.indep.stats.tr[,altmetricsColumns] = tr(dat.indep.stats.tr[,altmetricsColumns])
+summary(dat.indep.stats.tr)
+
+###### Normalize
 
 
-###### Background subtraction of lowess
-
-dat.indep.stats.norm = data.frame(row.names = dat.transformed$doi)
-for (col in names(dat.indep.stats)) {
-	print(col)
-	background = lowess(dat.transformed[,col] ~ dat.transformed$daysSincePublished)
-	dat.indep.stats.norm[,col] = dat.transformed[, col] - background$y
+inWindow = function(x, windowSize=60) {
+	inWindowVals = list()
+	for (ii in seq(along=x)) {
+		inWindowVals[ii] = list(which((x > (x[ii] - windowSize/2)) & (x < (x[ii] + windowSize/2))))
+	}
+	return(inWindowVals)
 }
+
+meanInWindow = function(whichInWindow, y) {
+	a = sapply(seq(along=y), function(i, x, y) {mean(y[x[[i]]], na.rm=T)}, whichInWindow, y)
+	return(a)
+}
+
+varInWindow = function(whichInWindow, y, ii) {
+	a = sapply(seq(along=y), function(i, x, y) {var(y[x[[i]]], na.rm=T)}, whichInWindow, y)
+	return(a)
+}
+
+
+
+dat.indep.stats.tr.norm = dat.indep.stats.tr
+dat.indep.stats.tr.meannorm = dat.indep.stats.tr
+dat.background = data.frame(pubDate = dat.indep.stats.tr.norm$pubDate)
+
+inWindow180 = inWindow(dat.indep.stats.tr$daysSincePublished, 180)
+
+
+for (col in altmetricsColumns) {
+	print(col)
+	background = meanInWindow(inWindow180, dat.indep.stats.tr[,col])
+	background.var = varInWindow(inWindow180, dat.indep.stats.tr[,col])
+    dat.indep.stats.tr.norm[,col] = (dat.indep.stats.tr[, col] - background) / background.var
+    dat.indep.stats.tr.meannorm[,col] = (dat.indep.stats.tr[, col] - background) 
+	dat.background[,col] = background
+}
+
+quartz()
+par(mfrow = c(ceiling(length(altmetricsColumns)/4), 4), oma=c(2,2,4,2), mar=c(2, 1, 1, 1))
+for (col in altmetricsColumns) {
+	print(col)
+	#pdf(paste("results/timing/", col, ".pdf", sep=""))
+	plot(dat.indep.stats.tr$pubDate, dat.indep.stats.tr[,col], main=col, col="black", pch=20, cex=.5)	
+	points(dat.indep.stats.tr$pubDate, dat.background[,col], col="red", lwd=5, main=col)
+}
+title("Trends over time", outer=TRUE)
+
+for (col in altmetricsColumns) {
+	print(col)
+	#pdf(paste("results/timing/", col, ".pdf", sep=""))
+
+	#quartz()
+	#plot(dat.indep.stats.tr$pubDate, dat.indep.stats.tr[, col]^2 - 1, main=col)
+	#points(dat.indep.stats.tr$pubDate, dat.background[,col]^2 - 1, col="red", lwd=5, main=col)
+
+	quartz()
+	plot(dat.indep.stats.tr.norm$pubDate, dat.indep.stats.tr[,col], main=col, col="black", pch=20, cex=.5)
+	points(dat.indep.stats.tr.norm$pubDate, dat.background[,col], col="red", lwd=5, main=col, pch=20, cex=.25)
+	par(new=T)
+	plot(dat.indep.stats.tr.norm$pubDate, dat.indep.stats.tr.meannorm[,col], main=col, col="blue", pch=20, cex=.5, axes=F)
+	axis(side=4)
+}
+summary(dat.indep.stats.tr.norm)
+summary(dat.background)
+
+
+
 
 ############## Get correlation matrix
 
@@ -41,11 +102,12 @@ for (col in names(dat.indep.stats)) {
 
 library(polycor)
 #myhetcorr = hetcor.modified(dat.indep.stats, use="complete.obs", std.err=FALSE, pd=FALSE)
-myhetcorr = hetcor.modified(dat.indep.stats.norm, 
+myhetcorr = hetcor.modified(dat.indep.stats.tr.meannorm[,altmetricsColumns], 
 							use="pairwise.complete.obs", 
 							std.err=FALSE, 
 							pd=FALSE, 
 							type="spearman")
+#							type="pearson")
 mycor.unadjusted = myhetcorr$correlations
 #write.table(mycor.unadjusted,"/Users/hpiwowar/stats link/mycor.unadjusted.txt",append=F,quote=F,sep="\t",row.names=T)
 
@@ -81,7 +143,7 @@ showpanel(bluered(32))
 library(nFactors)
 eigenvectors.1st <- eigen(mycor) # get eigenvalues
 # this line takes a long time
-aparallel.1st <- parallel(subject=nrow(dat.indep.stats.norm), var=ncol(dat.indep.stats.norm), rep=100, cent=.05)
+aparallel.1st <- parallel(subject=nrow(dat.indep.stats.tr.meannorm), var=ncol(dat.indep.stats.tr.meannorm), rep=100, cent=.05)
 scree.results.1st <- nScree(eigenvectors.1st$values, aparallel.1st$eigen$qevpea)
 summary(scree.results.1st)
 plotnScree(scree.results.1st) 
@@ -95,17 +157,16 @@ number.factors.1st = 5
 
 ##############  Do First-Order Factor Analysis
 
-# Maximum liklihood doesn't converge because too 
-fit.ml = factanal(dat.indep.stats.norm, number.factors.1st, rotation="promax", covmat=mycor)
+# Maximum liklihood 
+fit.ml = factanal(dat.indep.stats.tr.meannorm, number.factors.1st, rotation="oblimin", covmat=mycor)
 print(fit.ml, sort=TRUE)
 
 
 # Use princip axis when maximum liklihood fails to converge:
 library(psych)
-fit.fa.1st = fa(mycor, number.factors.1st, fm="minres", rotate="promax", 
-                scores=FALSE, residuals=TRUE, n.obs=max(dim(dat.indep.stats.norm)))
+
 fit.fa.1st = fa(mycor, number.factors.1st, fm="minres", rotate="oblimin", 
-                scores=FALSE, residuals=TRUE, n.obs=max(dim(dat.indep.stats.norm)))
+                scores=FALSE, residuals=TRUE, n.obs=max(dim(dat.indep.stats.tr.meannorm)))
 
 #to show the loadings sorted by absolute value
 print(fit.fa.1st, sort=TRUE)

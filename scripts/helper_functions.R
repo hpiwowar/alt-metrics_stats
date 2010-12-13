@@ -1,7 +1,11 @@
 
 #### HELPER FUNCTIONS
 
-# transform for count data
+# transform for count data due to
+# http://pareonline.net/getvn.asp?v=8&n=6
+# if no numbers between 0 and 1, not going to add a +1 offset
+tr.0 = function(x) return(sqrt(x))
+
 # using sqrt with minimum value of 1, as per advice at
 # http://www.webcitation.org/query?url=http%3A%2F%2Fpareonline.net%2Fgetvn.asp%3Fv%3D8%26n%3D6&date=2010-02-11
 tr = function(x) return(sqrt(1 + x))
