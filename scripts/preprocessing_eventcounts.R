@@ -62,11 +62,11 @@ for (col in facebookColumns) {
 	dat.eventcounts[which(dat.eventcounts[, col] < 0), col] = NA	
 }
 
-## article Type, set numeric values to "Research Article" 
+## article Type, set NAs to "Research Article" 
 # and store as a factor
-## See https://github.com/hpiwowar/alt-metrics_stats/issues/issue/9 
-dat.eventcounts$articleType[!is.na(as.numeric(dat.eventcounts$articleType))] = "Research Article" 
+dat.eventcounts$articleType[is.na(dat.raw.eventcounts$articleType)] = "Research Article" 
 dat.eventcounts$articleType = factor(dat.eventcounts$articleType)
+summary(dat.eventcounts$articleType)
 
 ## authorsCount
 dat.eventcounts$authorsCount = as.numeric(dat.raw.eventcounts$authorsCount)

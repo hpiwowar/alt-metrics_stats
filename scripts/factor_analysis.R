@@ -12,8 +12,13 @@ Rserve(args="--no-save")
 source("scripts/helper_functions.R")
 #source("scripts/preprocessing.R")
 
+### Get just the dataset we want for this
+## Restrict to Research Articles
+## get rid of other columns we won't be using
+
 excludeColumns = c("journal", "articleType", "authorsCount")
 dat.indep.stats = dat.eventcounts[,names(dat.eventcounts) %nin% excludeColumns]
+dat.indep.stats = dat.indep.stats[which(as.character(dat.eventcounts$articleType) == "Research Article"),]
 summary(dat.indep.stats)
 
 metadataColumns = c("doi", "pubDate", "daysSincePublished", "journal", "articleType", "authorsCount")
@@ -123,8 +128,19 @@ library(gplots)
 colorRange = round(range(mycor) * 15) + 16
 colorChoices = bluered(32)[colorRange[1]:colorRange[2]]
 if (bSaveImage) png("results/heatmap.png")
-	heatmap.2(mycor, col=colorChoices, cexRow=0.9, cexCol = .9, symm = TRUE, dend = "row", trace = "none", main = "Thesis Data", margins=c(10,10), key=FALSE, keysize=0.1)
+	heatmap.2(mycor, col=colorChoices, cexRow=0.9, cexCol = .9, symm = TRUE, dend = "row", trace = "none", margins=c(10,10), key=FALSE, keysize=0.1)
 if (bSaveImage) dev.off()
+
+# Now a heatmap with a subsample of articles and the variables
+set.seed(42)
+dat.subsample = as.matrix(dat.indep.stats[sample(1:dim(dat.indep.stats)[1], 1000, TRUE),altmetricsColumns])
+m=32
+# using canberra distance because tried several and this one had the most interperable dendrogram
+heatmap.2(t(dat.subsample), col=bluered(m*2)[m:(m*2-1)], 
+	distfun = function(x) dist(x, method="canberra"), 
+	cexRow=.6, cexCol=.6, dend = "both", scale="row", trace="none", 
+	margins=c(1,10), key=FALSE, keysize=0.1, breaks=c(0:m)/m)
+
 
 showpanel <- function(col) {
   image(z=matrix(1:100, ncol=1), col=col, xaxt="n", yaxt="n" )
@@ -133,9 +149,6 @@ quartz()
 showpanel(colorChoices)
 showpanel(bluered(32))
 
-#pdf("heatmap.pdf", height=10, width=10)
-#heatmap.2(mycor, col=colorChoices, cexRow=0.9, cexCol = .9, symm = TRUE, dend = "row", trace = "none", main = "Thesis Data", margins=c(10,10), key=FALSE, keysize=0.1)
-#dev.off
 
 ############## FIRST ORDER ANALYSIS
 
@@ -182,11 +195,11 @@ print(fit.fa.1st, sort=TRUE)
 
 
 factor.names.1st = c(
-"MR1"="Citations",
-"MR2"="Downloads",
-"MR3"="Facebook",
-"MR4"="Mendeley",
-"MR5"="Comments")
+"MR1"="MR1",
+"MR2"="MR2",
+"MR3"="MR3",
+"MR4"="MR4",
+"MR5"="MR5")
 
 for (afactor in names(factor.names.1st)) {
     print(paste(afactor, ": ", factor.names.1st[afactor], sep=""))
